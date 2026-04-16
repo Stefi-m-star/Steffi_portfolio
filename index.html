@@ -117,6 +117,14 @@ body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--
 }
 .contact-item:hover { color: var(--white); }
 .contact-icon { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+.resume-link {
+  margin-top: 4px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  padding: 6px 10px !important;
+  font-weight: 600;
+}
 .profile-bio {
   font-size: 12.5px; color: rgba(255,255,255,0.75);
   line-height: 1.6; margin-bottom: 20px;
@@ -674,6 +682,11 @@ body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--
         <input class="form-input" id="pf-medium" type="url" placeholder="https://medium.com/@...">
       </div>
       <div class="form-group">
+        <label class="form-label">Resume / CV Link</label>
+        <input class="form-input" id="pf-resumeUrl" type="url" placeholder="Google Drive / Dropbox link to your resume PDF">
+        <div style="font-size:12px;color:#888;margin-top:4px;">Upload your resume to Google Drive, set sharing to &ldquo;Anyone with link&rdquo;, paste the link here.</div>
+      </div>
+      <div class="form-group">
         <label class="form-label">Bio</label>
         <textarea class="form-textarea" id="pf-bio" placeholder="A short bio about yourself..."></textarea>
       </div>
@@ -753,7 +766,7 @@ let itemImageData = null;
 let profileData = {
   name: 'Steffi M', tagline: 'Developer & Creator',
   phone: '', email: '', linkedin: '', github: '',
-  location: '', portfolio: '', medium: '', bio: '', avatar: ''
+  location: '', portfolio: '', medium: '', bio: '', avatar: '', resumeUrl: ''
 };
 
 let sectionData = {
@@ -856,17 +869,23 @@ function renderProfile() {
 
   // Contacts
   const contacts = [];
+  function safeHref(url) {
+    if (!url) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return 'https://' + url;
+  }
   if (profileData.phone)     contacts.push({ icon: '&#128222;', text: profileData.phone, href: 'tel:' + profileData.phone });
   if (profileData.email)     contacts.push({ icon: '&#9993;',   text: profileData.email, href: 'mailto:' + profileData.email });
-  if (profileData.linkedin)  contacts.push({ icon: '&#127760;', text: 'LinkedIn', href: profileData.linkedin });
-  if (profileData.github)    contacts.push({ icon: '&#128025;', text: 'GitHub', href: profileData.github });
+  if (profileData.linkedin)  contacts.push({ icon: '&#127760;', text: 'LinkedIn', href: safeHref(profileData.linkedin) });
+  if (profileData.github)    contacts.push({ icon: '&#128025;', text: 'GitHub', href: safeHref(profileData.github) });
   if (profileData.location)  contacts.push({ icon: '&#128205;', text: profileData.location, href: null });
-  if (profileData.portfolio) contacts.push({ icon: '&#128640;', text: 'Portfolio', href: profileData.portfolio });
-  if (profileData.medium)    contacts.push({ icon: '&#9997;',   text: 'Blog / Medium', href: profileData.medium });
+  if (profileData.portfolio) contacts.push({ icon: '&#128640;', text: 'Portfolio', href: safeHref(profileData.portfolio) });
+  if (profileData.medium)    contacts.push({ icon: '&#9997;',   text: 'Blog / Medium', href: safeHref(profileData.medium) });
+  if (profileData.resumeUrl) contacts.push({ icon: '&#128196;', text: 'Download Resume', href: safeHref(profileData.resumeUrl), download: true });
 
   const cc = document.getElementById('profile-contacts');
   cc.innerHTML = contacts.map(c => c.href
-    ? `<a class="contact-item" href="${c.href}" target="_blank" rel="noopener"><span class="contact-icon">${c.icon}</span><span>${escHtml(c.text)}</span></a>`
+    ? `<a class="contact-item${c.download ? ' resume-link' : ''}" href="${c.href}" target="_blank" rel="noopener"${c.download ? ' download' : ''}><span class="contact-icon">${c.icon}</span><span>${escHtml(c.text)}</span></a>`
     : `<span class="contact-item"><span class="contact-icon">${c.icon}</span><span>${escHtml(c.text)}</span></span>`
   ).join('');
 }
@@ -1266,6 +1285,8 @@ function openProfileModal() {
   document.getElementById('pf-portfolio').value = profileData.portfolio || '';
   document.getElementById('pf-medium').value    = profileData.medium    || '';
   document.getElementById('pf-bio').value       = profileData.bio       || '';
+  const resumeEl = document.getElementById('pf-resumeUrl');
+  if (resumeEl) resumeEl.value = profileData.resumeUrl || '';
   document.getElementById('profile-modal').classList.add('open');
 }
 
@@ -1284,6 +1305,7 @@ async function saveProfile() {
   profileData.portfolio = (document.getElementById('pf-portfolio').value || '').trim();
   profileData.medium    = (document.getElementById('pf-medium').value    || '').trim();
   profileData.bio       = (document.getElementById('pf-bio').value       || '').trim();
+  profileData.resumeUrl = (document.getElementById('pf-resumeUrl')?.value || '').trim();
 
   try {
     await fsSet('portfolio/profile', profileData);
